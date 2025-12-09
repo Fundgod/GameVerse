@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Chess } from "chess.js";
-import { Chessboard } from "react-chessboard";
+import { Chessboard, type PieceDropHandlerArgs } from "react-chessboard";
 
 type Move = {
   from: string;
@@ -10,13 +10,10 @@ type Move = {
 };
 
 export default function ChessGame() {
-  const chessRef = useRef(new Chess());
-  // Přidej fen s getterem
-  const [fen, setFen] = useState(chessRef.current.fen());
+  const [game, setGame] = useState(new Chess());
+  const [fen, setFen] = useState(game.fen());
   const [moves, setMoves] = useState<Move[]>([]);
   const [boardWidth, setBoardWidth] = useState(Math.min(window.innerWidth * 0.8, 560));
-
-  const update = () => setFen(chessRef.current.fen());
 
   useEffect(() => {
     const handleResize = () => setBoardWidth(Math.min(window.innerWidth * 0.8, 560));
@@ -37,38 +34,57 @@ export default function ChessGame() {
       });
   }, []);
 
-  function onPieceDrop(source: string, target: string) {
-    console.log("Tah z", source, "na", target); // debugger log
-    const move = chessRef.current.move({
-      from: source,
-      to: target,
+  function onPieceDrop({ sourceSquare, targetSquare }: PieceDropHandlerArgs) {
+    console.log("Tah z", sourceSquare, "na", targetSquare); // debugger log
+
+    // targetSquare can be null if piece is dropped off board
+    if (!targetSquare) return false;
+
+    // Create a new Chess instance and load current game state
+    // (This is made this way so react-chessboard can update the board (newer version requires this))
+    const gameCopy = new Chess();
+    gameCopy.loadPgn(game.pgn());
+
+    const move = gameCopy.move({
+      from: sourceSquare,
+      to: targetSquare,
       promotion: "q",
     } as any);
 
     if (move === null) {
       return false; // tah není povolen
     } else {
-      setMoves(m => [...m, { from: source, to: target, piece: move.piece, captured: (move as any).captured }]);
-      update();
+      // Update state with new game instance
+      setGame(gameCopy);
+      setFen(gameCopy.fen());
+      setMoves(m => [...m, { from: sourceSquare, to: targetSquare, piece: move.piece, captured: (move as any).captured }]);
+
       fetch("http://localhost:8000/api/move", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ from_square: source, to_square: target }),
-      }).catch(() => {});
+        body: JSON.stringify({ from_square: sourceSquare, to_square: targetSquare }),
+      }).catch(() => { });
       return true; // tah povolen
     }
   }
 
   function onReset() {
-    chessRef.current.reset();
+    const newGame = new Chess();
+    setGame(newGame);
+    setFen(newGame.fen());
     setMoves([]);
-    update();
   }
 
   return (
     <div style={{ display: "flex", gap: 16, flexWrap: "wrap", maxWidth: "100vw" }}>
       <div style={{ flex: "1 1 auto", minWidth: 280, maxWidth: boardWidth }}>
-        <Chessboard position={fen} onPieceDrop={onPieceDrop} boardWidth={boardWidth} />
+        <Chessboard
+          options={{
+            position: fen,
+            onPieceDrop: onPieceDrop,
+            boardStyle: { width: `${boardWidth}px` }
+          }}
+        />
         <div style={{ marginTop: 8, display: "flex", gap: 8 }}>
           <button onClick={onReset}>Reset</button>
           <div id="status" style={{ marginLeft: "auto", alignSelf: "center" }}></div>

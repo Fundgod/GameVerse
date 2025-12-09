@@ -1,4 +1,3 @@
-import React from "react";
 import ChessGame from "./components/ChessGame";
 import "./Chess.css";
 
@@ -8,7 +7,6 @@ export default function App() {
       <div className="sidebar">
         <h2>Chess Hub</h2>
         <p>Controls, timer, move list etc. will be here.</p>
-        <div id="status" />
       </div>
 
       <div className="boardWrapper">
