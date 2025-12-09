@@ -116,6 +116,7 @@ h1 {
   margin: 3px;
   border-radius: 3px;
   background-color: #DADADA;
+  color: black;
   cursor: pointer;
   font-weight: semibold;
   display: flex;
