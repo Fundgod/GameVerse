@@ -13,11 +13,9 @@ interface ChessGameProps {
 }
 
 export default function ChessGame({ onMove, onGameStateChange }: ChessGameProps) {
-  // create a chess game using a ref to always have access to the latest game state within closures and maintain the game state across renders
   const chessGameRef = useRef(new Chess());
   const chessGame = chessGameRef.current;
 
-  // track the current position of the chess game in state to trigger a re-render of the chessboard
   const [chessPosition, setChessPosition] = useState(chessGame.fen());
   const [moveFrom, setMoveFrom] = useState('');
   const [optionSquares, setOptionSquares] = useState<Record<string, React.CSSProperties>>({});
@@ -36,13 +34,12 @@ export default function ChessGame({ onMove, onGameStateChange }: ChessGameProps)
 
   // get the move options for a square to show valid moves
   function getMoveOptions(square: Square) {
-    // get the moves for the square
     const moves = chessGame.moves({
       square,
       verbose: true
     });
 
-    // if no moves, clear the option squares
+    // if no moves, clear the option squares (may continue to show last touched piece)
     if (moves.length === 0) {
       setOptionSquares({});
       return false;
@@ -51,7 +48,7 @@ export default function ChessGame({ onMove, onGameStateChange }: ChessGameProps)
     // create a new object to store the option squares
     const newSquares: Record<string, React.CSSProperties> = {};
 
-    // loop through the moves and set the option squares
+    // show all possible moves with this piece
     for (const move of moves) {
       newSquares[move.to] = {
         background: chessGame.get(move.to) && chessGame.get(move.to)?.color !== chessGame.get(square)?.color
@@ -61,30 +58,25 @@ export default function ChessGame({ onMove, onGameStateChange }: ChessGameProps)
       };
     }
 
-    // set the square clicked to move from to yellow
+    // set the square clicked to move from to yellow (add to previous return?)
     newSquares[square] = {
       background: 'rgba(255, 255, 0, 0.4)'
     };
 
-    // set the option squares
     setOptionSquares(newSquares);
 
-    // return true to indicate that there are move options
     return true;
   }
 
   function onSquareClick({ square, piece }: SquareHandlerArgs) {
-    // piece clicked to move
+    // if there is no piece selected and a piece is clicked, get the move options
     if (!moveFrom && piece) {
-      // get the move options for the square
       const hasMoveOptions = getMoveOptions(square as Square);
 
-      // if move options, set the moveFrom to the square
       if (hasMoveOptions) {
         setMoveFrom(square);
       }
 
-      // return early
       return;
     }
 
@@ -95,7 +87,6 @@ export default function ChessGame({ onMove, onGameStateChange }: ChessGameProps)
     });
     const foundMove = moves.find(m => m.from === moveFrom && m.to === square);
 
-    // not a valid move
     if (!foundMove) {
       // check if clicked on new piece
       const hasMoveOptions = getMoveOptions(square as Square);
@@ -103,7 +94,6 @@ export default function ChessGame({ onMove, onGameStateChange }: ChessGameProps)
       // if new piece, setMoveFrom, otherwise clear moveFrom
       setMoveFrom(hasMoveOptions ? square : '');
 
-      // return early
       return;
     }
 
@@ -123,26 +113,23 @@ export default function ChessGame({ onMove, onGameStateChange }: ChessGameProps)
         onMove(move, chessGame.history({ verbose: true }));
       }
 
-      // clear moveFrom and optionSquares
       setMoveFrom('');
       setOptionSquares({});
     } catch {
       // if invalid, setMoveFrom and getMoveOptions
       const hasMoveOptions = getMoveOptions(square as Square);
 
-      // if new piece, setMoveFrom, otherwise clear moveFrom
       if (hasMoveOptions) {
         setMoveFrom(square);
       }
 
-      // return early
       return;
     }
   }
 
   // handle piece drop
   function onPieceDrop({ sourceSquare, targetSquare }: PieceDropHandlerArgs) {
-    // type narrow targetSquare potentially being null (e.g. if dropped off board)
+    // catch null targetSquare (if dropped off board)
     if (!targetSquare) {
       return false;
     }
@@ -152,30 +139,26 @@ export default function ChessGame({ onMove, onGameStateChange }: ChessGameProps)
       const move = chessGame.move({
         from: sourceSquare,
         to: targetSquare,
-        promotion: 'q' // always promote to a queen for example simplicity
+        promotion: 'q' // always promote to a queen
       });
 
-      // update the position state upon successful move to trigger a re-render of the chessboard
-      setChessPosition(chessGame.fen());
+      setChessPosition(chessGame.fen());  // re-render chessboard
 
-      // notify parent of the move
+      // notify parent (sidebar moves) of the move
       if (onMove && move) {
         onMove(move, chessGame.history({ verbose: true }));
       }
 
-      // clear moveFrom and optionSquares
       setMoveFrom('');
       setOptionSquares({});
 
-      // return true as the move was successful
       return true;
     } catch {
-      // return false as the move was not successful
       return false;
     }
   }
 
-  // set the chessboard options
+  // chessboard options
   const chessboardOptions = {
     onPieceDrop,
     onSquareClick,
@@ -184,6 +167,5 @@ export default function ChessGame({ onMove, onGameStateChange }: ChessGameProps)
     id: 'click-or-drag-to-move'
   };
 
-  // render the chessboard
   return <Chessboard options={chessboardOptions} />;
 }
