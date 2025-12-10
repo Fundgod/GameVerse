@@ -1,13 +1,13 @@
+import uuid
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import random
-import nltk # type: ignore
-from nltk.corpus import words # type: ignore
+import nltk 
+from nltk.corpus import words 
 
 app = FastAPI()
 
-# Povolit frontend přístup (CORS)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -15,80 +15,99 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
-# Při prvním spuštění stáhni slovník
+# Ujistíme se, že máme stažený korpus slov
 try:
     nltk.data.find('corpora/words')
 except LookupError:
     nltk.download('words')
 
-# Načti JEN 5písmenná anglická slova
-FIVE_LETTER_WORDS = set(
+# Načteme slovník anglických slov
+VALID_GUESSES = set(
     word.lower() for word in words.words() 
     if len(word) == 5 and word.isalpha()
 )
 
-print(f"Načteno {len(FIVE_LETTER_WORDS)} pětipísmenných slov")
+# Zjednodušený slovník pro výběr tajného slova
+SECRET_CANDIDATES = list(set(
+    word.lower() for word in words.words('en-basic') 
+    if len(word) == 5 and word.isalpha()
+))
 
+# Debug výpisy
+print(f"Načteno {len(VALID_GUESSES)} pětipísmenných slov v tajném slovníku, z toho {len(SECRET_CANDIDATES)} ve zjednodušeném.")
+
+# Ukládáme hry do paměti pomocí slovníku
+GAMES = {} 
+
+# Model pro příchozí hádání slova
 class Guess(BaseModel):
     word: str
+    game_id: str
 
-# Simple global secret word
-SECRET_WORD = random.choice(list(FIVE_LETTER_WORDS))
-
+# Funkce pro výpočet zpětné vazby
 def compute_feedback(secret: str, guess: str) -> list[str]:
-    feedback = ["B"] * len(secret)  # B = šedá
+    feedback = ["B"] * len(secret)
     secret_count = {}
-
     for c in secret:
         secret_count[c] = secret_count.get(c, 0) + 1
-
-    # zelené (G)
     for i in range(len(secret)):
         if guess[i] == secret[i]:
             feedback[i] = "G"
             secret_count[guess[i]] -= 1
-
-    # žluté (Y)
     for i in range(len(secret)):
         if feedback[i] == "B" and guess[i] in secret_count and secret_count[guess[i]] > 0:
             feedback[i] = "Y"
             secret_count[guess[i]] -= 1
-
     return feedback
 
+# Running Endpoint
 @app.get("/")
 def root():
     return {"message": "Wordle backend běží!"}
 
-print(f"Slovo je: {SECRET_WORD}")
+# Endpoint pro vytvoření nové hry
+@app.post("/api/new_game")
+def new_game():
+    game_id = str(uuid.uuid4())
+    if not SECRET_CANDIDATES:
+        # Kdyby seznam prázdný - použijeme pevné slovo pro testování
+        secret_word = "apple" 
+    else:
+        secret_word = random.choice(SECRET_CANDIDATES)
+        
+    GAMES[game_id] = secret_word
+    print(f"Nová hra {game_id}: {secret_word}")
+    return {"game_id": game_id}
 
+# Endpoint pro kontrolu hádaného slova
 @app.post("/api/check_word")
 def check_word(guess: Guess):
-    global SECRET_WORD  # <-- musí být jako první ve funkci
+    # Najdeme tajné slovo pro tuto konkrétní hru
+    secret_word = GAMES.get(guess.game_id)
+
+    if not secret_word:
+        raise HTTPException(status_code=404, detail="Hra nenalezena (asi vypršela nebo neexistuje)")
 
     word = guess.word.lower()
-    
+    # Validace vstupu
     if len(word) != 5:
         raise HTTPException(status_code=400, detail="Slovo musí mít 5 písmen")
     if not word.isalpha():
         raise HTTPException(status_code=400, detail="Slovo musí obsahovat jen písmena")
-    if word not in FIVE_LETTER_WORDS:
+    if word not in VALID_GUESSES:
         raise HTTPException(status_code=400, detail="Neplatné anglické slovo")
     
-    result = compute_feedback(SECRET_WORD, word)
-    is_correct = word == SECRET_WORD
+    result = compute_feedback(secret_word, word)
+    is_correct = word == secret_word
 
-    # Pokud je slovo správné, vygeneruj nové
-    if is_correct:
-        SECRET_WORD = random.choice(list(FIVE_LETTER_WORDS))
-        print(f"Nové tajné slovo je: {SECRET_WORD}")
-
+    # Debug výpis
     return {
         "word": word,
         "result": result,
         "is_correct": is_correct
     }
 
+# Endpoint pro získání stavu serveru
 @app.get("/api/status")
 async def status():
-    return {"status": "ok", "message": "FastAPI backend is up"}
+    return {"status": "ok", "active_games": len(GAMES)}

@@ -2,29 +2,32 @@
 .wordle-app-container {
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start; /* ZMĚNA: Už ne center, ale flex-start (nahoru) */
   align-items: center;
   min-height: 100vh;
   width: 100vw;
   text-align: center;
   background-color: #FFFFFF;
+  padding-top: 40px; /* ZMĚNA: Odsazení od horního okraje okna */
   user-select: none;
   cursor: default;
   outline: none;
+  box-sizing: border-box; /* Důležité, aby padding nerozhodil šířku */
 }
 
-/* Toast notifikace */
+/* 2. Toast notifikace - posuneme ji do mezery pod nadpis */
 .toast {
   position: fixed;
-  top: 20px;
+  top: 100px; /* ZMĚNA: Posunuto dolů, aby to bylo pod nadpisem */
   left: 50%;
   transform: translateX(-50%);
   background-color: #626262;
   color: #fff;
   padding: 10px 20px;
-  border-radius: 3px;
-  font-size: 16px;
-  font-weight: bold;
+  border-radius: 4px; /* Jemnější rohy */
+  font-size: 14px;    /* Trochu menší font, ať to není obří */
+  font-weight: 600;
+  text-transform: uppercase; /* Aby to vypadalo jako na obrázku */
   z-index: 1000;
   box-shadow: 0 4px 12px rgba(0,0,0,0.3);
   animation: slideDown 0.3s ease;
@@ -44,8 +47,10 @@
 
 /* Nadpis */
 h1 {
-  margin: 0 0 30px 0;
+  margin: 0 0 75px 0; /* ZMĚNA: Větší mezera dole (60px), kam se vejde toast */
   color: #000;
+  font-size: 2.7rem; /* Můžeš zvětšit, pokud chceš */
+  font-weight: 700;  /* Tučnější */
 }
 
 /* Herní mřížka - řádek */
@@ -116,7 +121,6 @@ h1 {
   margin: 3px;
   border-radius: 3px;
   background-color: #DADADA;
-  color: black;
   cursor: pointer;
   font-weight: semibold;
   display: flex;
@@ -144,6 +148,25 @@ h1 {
   border-color: #000;
 }
 
+/* --- NOVÉ: Barvy klávesnice dle stavu --- */
+.key.green {
+  background-color: #61AF26;
+  border-color: #61AF26;
+  color: #fff;
+}
+
+.key.yellow {
+  background-color: #C9AF58;
+  border-color: #C9AF58;
+  color: #fff;
+}
+
+.key.black {
+  background-color: #626262;
+  border-color: #626262;
+  color: #fff;
+}
+
 .win-screen {
   display: flex;
   flex-direction: column;
@@ -154,18 +177,172 @@ h1 {
   font-size: 1.5rem;
 }
 
-.win-screen button {
-  margin: 0.5rem;
-  padding: 0.8rem 1.2rem;
-  font-size: 1rem;
-  cursor: pointer;
-  border-radius: 6px;
-  border: none;
-  background-color: #43e97b;
-  color: white;
-  transition: background-color 0.3s ease;
+/* --- VÝHERNÍ OBRAZOVKA --- */
+
+.win-screen {
+  display: flex;
+  flex-direction: column;
+  justify-content: center; /* Zarovnání na střed, jako na obrázku */
+  align-items: center;
+  min-height: 80vh; /* Dostatek místa */
+  text-align: center;
+  background-color: #fff;
+  color: #000;
+  padding-top: 20px;
+  user-select: none;          /* Standardní syntaxe */
+  -webkit-user-select: none;  /* Pro Safari a Chrome */
+  cursor: default;            /* Kurzoru se změní na šipku, ne na "I" pro psaní */
 }
 
-.win-screen button:hover {
-  background-color: #329b57;
+/* Nadpis */
+.win-screen h1 {
+  margin-bottom: 40px;
+  font-size: 2rem;
+  font-weight: bold;
+}
+
+/* Ikonka mřížky (statická) */
+.mini-grid-icon {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 30px;
+}
+
+.mini-row {
+  display: flex;
+}
+
+.mini-cell-static {
+  width: 35px;
+  height: 35px;
+}
+
+/* Barvy pro mini mřížku */
+.mini-cell-static.green { background-color: #61AF26; }
+.mini-cell-static.yellow { background-color: #C9AF58; }
+.mini-cell-static.black { background-color: #626262; }
+
+/* Texty výsledků */
+.win-title {
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin: 0 0 10px 0;
+}
+
+.win-subtitle {
+  font-size: 1rem;
+  margin: 5px 0;
+  color: #000;
+  font-weight: 500;
+}
+
+/* Kontejner pro tlačítka */
+.win-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 40px;
+  width: 160px; /* Fixní šířka tlačítek dle obrázku */
+}
+
+/* --- ŠEDÁ TLAČÍTKA (Fix barvy) --- */
+.btn-grey {
+  padding: 10px 0;
+  font-size: 1rem;
+  font-weight: normal; /* Na obrázku není bold */
+  cursor: pointer;
+  border-radius: 4px;
+  border: none;
+  background-color: #626262; /* Tvoje požadovaná šedá */
+  color: white;
+  transition: background-color 0.2s ease;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.btn-grey:hover {
+  background-color: #4a4a4a; /* Ztmavení po najetí */
+}
+
+/* --- UPRAVENÝ LAYOUT HRY --- */
+
+.game-content {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 50px;
+  margin-bottom: 30px;
+}
+
+/* Boční panel - přidal jsem align-items: center pro vycentrování všeho pod sebou */
+.side-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-top: 20px;
+  align-items: center; /* <--- TOTO VYŘEŠÍ ZAROVNÁNÍ TLAČÍTKA */
+}
+
+/* --- STYLY PRO BOXY A TLAČÍTKO (Sjednocené rozměry) --- */
+
+.info-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%; /* Aby kontejner zabíral celou šířku rodiče */
+}
+
+.info-label {
+  font-size: 0.7rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 5px;
+  color: #333;
+}
+
+/* Info box (Čas a Tahy) */
+.info-box {
+  background-color: #fff;
+  border: 2px solid #333;
+  border-radius: 4px;
+  padding: 10px 0;
+  width: 130px; /* Zvětšeno a fixováno */
+  height: 45px; /* Fixní výška pro konzistenci */
+  display: flex;        /* Flex pro vertikální centrování textu */
+  align-items: center;  /* Flex pro vertikální centrování textu */
+  justify-content: center; /* Flex pro horizontální centrování textu */
+  text-align: center;
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #000;
+  box-sizing: border-box; /* Důležité, aby padding neměnil šířku */
+}
+
+/* Tlačítko Leave - stejné rozměry jako info-box */
+.leave-btn {
+  /* Odstranil jsem margin-top, protože side-panel už má gap */
+  background-color: #fff;
+  border: 2px solid #666;
+  border-radius: 4px;
+  width: 130px; /* STEJNÁ ŠÍŘKA JAKO INFO-BOX */
+  height: 45px; /* STEJNÁ VÝŠKA JAKO INFO-BOX */
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  color: #333;
+  transition: background-color 0.2s;
+  box-sizing: border-box;
+}
+
+.leave-btn:hover {
+  background-color: #f0f0f0;
+  border-color: #333;
 }
