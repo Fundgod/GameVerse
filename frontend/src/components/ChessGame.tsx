@@ -1,8 +1,18 @@
-import { useRef, useState } from "react";
-import { Chess, type Square } from "chess.js";
+import { useRef, useState, useEffect } from "react";
+import { Chess, type Square, type Move } from "chess.js";
 import { Chessboard, type PieceDropHandlerArgs, type SquareHandlerArgs } from "react-chessboard";
 
-export default function ChessGame() {
+interface ChessGameProps {
+  onMove?: (move: Move, history: Move[]) => void;
+  onGameStateChange?: (gameState: {
+    isGameOver: boolean;
+    isCheckmate: boolean;
+    isDraw: boolean;
+    turn: 'w' | 'b';
+  }) => void;
+}
+
+export default function ChessGame({ onMove, onGameStateChange }: ChessGameProps) {
   // create a chess game using a ref to always have access to the latest game state within closures and maintain the game state across renders
   const chessGameRef = useRef(new Chess());
   const chessGame = chessGameRef.current;
@@ -11,6 +21,18 @@ export default function ChessGame() {
   const [chessPosition, setChessPosition] = useState(chessGame.fen());
   const [moveFrom, setMoveFrom] = useState('');
   const [optionSquares, setOptionSquares] = useState<Record<string, React.CSSProperties>>({});
+
+  // notify parent of game state changes
+  useEffect(() => {
+    if (onGameStateChange) {
+      onGameStateChange({
+        isGameOver: chessGame.isGameOver(),
+        isCheckmate: chessGame.isCheckmate(),
+        isDraw: chessGame.isDraw(),
+        turn: chessGame.turn()
+      });
+    }
+  }, [chessPosition, onGameStateChange, chessGame]);
 
   // get the move options for a square to show valid moves
   function getMoveOptions(square: Square) {
@@ -87,11 +109,23 @@ export default function ChessGame() {
 
     // is normal move
     try {
-      chessGame.move({
+      const move = chessGame.move({
         from: moveFrom,
         to: square,
         promotion: 'q'
       });
+
+      // update the position state
+      setChessPosition(chessGame.fen());
+
+      // notify parent of the move
+      if (onMove && move) {
+        onMove(move, chessGame.history({ verbose: true }));
+      }
+
+      // clear moveFrom and optionSquares
+      setMoveFrom('');
+      setOptionSquares({});
     } catch {
       // if invalid, setMoveFrom and getMoveOptions
       const hasMoveOptions = getMoveOptions(square as Square);
@@ -104,13 +138,6 @@ export default function ChessGame() {
       // return early
       return;
     }
-
-    // update the position state
-    setChessPosition(chessGame.fen());
-
-    // clear moveFrom and optionSquares
-    setMoveFrom('');
-    setOptionSquares({});
   }
 
   // handle piece drop
@@ -122,7 +149,7 @@ export default function ChessGame() {
 
     // try to make the move according to chess.js logic
     try {
-      chessGame.move({
+      const move = chessGame.move({
         from: sourceSquare,
         to: targetSquare,
         promotion: 'q' // always promote to a queen for example simplicity
@@ -130,6 +157,11 @@ export default function ChessGame() {
 
       // update the position state upon successful move to trigger a re-render of the chessboard
       setChessPosition(chessGame.fen());
+
+      // notify parent of the move
+      if (onMove && move) {
+        onMove(move, chessGame.history({ verbose: true }));
+      }
 
       // clear moveFrom and optionSquares
       setMoveFrom('');
@@ -143,14 +175,6 @@ export default function ChessGame() {
     }
   }
 
-  // reset the game
-  function onReset() {
-    chessGame.reset();
-    setChessPosition(chessGame.fen());
-    setMoveFrom('');
-    setOptionSquares({});
-  }
-
   // set the chessboard options
   const chessboardOptions = {
     onPieceDrop,
@@ -160,22 +184,6 @@ export default function ChessGame() {
     id: 'click-or-drag-to-move'
   };
 
-  // render the chessboard with reset button
-  return (
-    <div>
-      <Chessboard options={chessboardOptions} />
-      <div style={{ marginTop: 16, display: "flex", gap: 8 }}>
-        <button onClick={onReset}>Reset Game</button>
-        {chessGame.isGameOver() && (
-          <div style={{ marginLeft: 16, alignSelf: "center", fontWeight: "bold" }}>
-            {chessGame.isCheckmate()
-              ? `Checkmate! ${chessGame.turn() === 'w' ? 'Black' : 'White'} wins!`
-              : chessGame.isDraw()
-                ? 'Draw!'
-                : 'Game Over'}
-          </div>
-        )}
-      </div>
-    </div>
-  );
+  // render the chessboard
+  return <Chessboard options={chessboardOptions} />;
 }
