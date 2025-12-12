@@ -1,13 +1,35 @@
-/* src/styles/Sudoku.css */
-
 .sudoku-container {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 20px;
-  font-family: Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+  min-height: 100vh;
+  background-color: #f8f9fa;
 }
 
+.sudoku-container h1 {
+  margin-bottom: 30px;
+  font-size: 28px;
+  color: #333;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+
+.game-layout {
+  display: flex;
+  gap: 40px;
+  margin-top: 10px;
+}
+
+.board-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Sudoku Board */
 .sudoku-board {
   display: grid;
   grid-template-rows: repeat(9, 50px);
@@ -15,6 +37,22 @@
   background-color: #333;
   padding: 2px;
   border: 3px solid #333;
+  border-radius: 4px;
+  position: relative;
+}
+
+.sudoku-board.diagonal-mode {
+  overflow: visible;
+}
+
+.diagonal-overlay {
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  width: calc(100% + 4px);
+  height: calc(100% + 4px);
+  pointer-events: none;
+  z-index: 5;
 }
 
 .sudoku-row {
@@ -24,19 +62,32 @@
 }
 
 .sudoku-cell {
-  width: 50px;
-  height: 50px;
   background-color: white;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  color: rgb(19, 61, 15);
   position: relative;
-  font-size: 20px;
-  font-weight: bold;
-  border-right: 1px solid #ccc;
-  border-bottom: 1px solid #ccc;
+  font-size: 22px;
+  font-weight: 600;
+  color: #1565c0;
+  transition: background-color 0.15s;
+}
+
+.sudoku-cell:hover {
+  background-color: #e3f2fd;
+}
+
+.sudoku-cell .cell-value {
+  z-index: 1;
+}
+
+.sudoku-cell.border-right {
+  border-right: 3px solid #333 !important;
+}
+
+.sudoku-cell.border-bottom {
+  border-bottom: 3px solid #333 !important;
 }
 
 .sudoku-cell.selected {
@@ -49,7 +100,7 @@
 
 .sudoku-cell.initial {
   color: #333;
-  font-weight: bold;
+  font-weight: 700;
 }
 
 .sudoku-cell.error {
@@ -57,27 +108,94 @@
   background-color: #ffebee;
 }
 
-/* Hrubšie bordery pre 3x3 boxy pomocou box-shadow */
-.sudoku-cell.border-right {
-  box-shadow: 3px 0 0 0 #333;
+/* Odd/Even bunky */
+.sudoku-cell.odd-cell {
+  background-color: #fff3e0;
 }
 
-.sudoku-cell.border-bottom {
-  box-shadow: 0 3px 0 0 #333;
+.sudoku-cell.odd-cell.selected {
+  background-color: #ffe0b2;
 }
 
-/* Pre bunky, ktoré majú oba bordery */
-.sudoku-cell.border-right.border-bottom {
-  box-shadow: 3px 0 0 0 #333, 0 3px 0 0 #333;
+.sudoku-cell.odd-cell.highlighted {
+  background-color: #ffecb3;
 }
 
-.sudoku-cell.diagonal {
+.sudoku-cell.even-cell {
   background-color: #e8eaf6;
 }
 
-/* Pre Odd/Even mode */
-.sudoku-cell.odd-even {
-  background-color: #f5f5f5;
+.sudoku-cell.even-cell.selected {
+  background-color: #c5cae9;
+}
+
+.sudoku-cell.even-cell.highlighted {
+  background-color: #d1c4e9;
+}
+
+/* Constraint indikátor (O/E) */
+.constraint-indicator {
+  position: absolute;
+  top: 2px;
+  left: 3px;
+  font-size: 9px;
+  font-weight: 700;
+  color: #9e9e9e;
+  z-index: 2;
+}
+
+/* Diagonálne bunky - svetlejšie */
+.sudoku-cell.diagonal-cell {
+  background-color: rgba(33, 150, 243, 0.15);
+}
+
+.sudoku-cell.diagonal-cell.selected {
+  background-color: rgba(33, 150, 243, 0.35);
+}
+
+.sudoku-cell.diagonal-cell.highlighted {
+  background-color: rgba(33, 150, 243, 0.25);
+}
+
+/* Diagonálne bunky - zabezpeč svetlé pozadie */
+.sudoku-cell.diagonal-cell {
+  background-color: #e3f2fd !important;
+}
+
+.sudoku-cell.diagonal-cell.initial {
+  background-color: #e3f2fd !important;
+  color: #333;
+}
+
+.sudoku-cell.diagonal-cell.selected {
+  background-color: #bbdefb !important;
+}
+
+.sudoku-cell.diagonal-cell.highlighted {
+  background-color: #c5e1f9 !important;
+}
+
+/* Comparison symboly */
+.comparison-symbol {
+  position: absolute;
+  font-size: 12px;
+  font-weight: 700;
+  color: #757575;
+  z-index: 10;
+  background-color: white;
+  padding: 0 2px;
+}
+
+.comparison-symbol.right {
+  right: -9px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.comparison-symbol.bottom {
+  bottom: -9px;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 /* Poznámky */
@@ -92,79 +210,441 @@
 
 .note {
   font-size: 10px;
-  color: #666;
+  color: #888;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-weight: 500;
 }
 
-/* Kontrolné prvky */
-.controls {
+.note.visible {
+  color: #1976d2;
+}
+
+/* Tlačidlá akcií */
+.action-buttons {
   display: flex;
   gap: 10px;
   margin-top: 20px;
 }
 
-.controls button {
-  padding: 10px 20px;
-  background-color: #2196f3;
-  color: white;
-  border: none;
-  border-radius: 4px;
+.btn-action {
+  padding: 10px 18px;
+  background-color: #f5f5f5;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  transition: all 0.2s;
 }
 
-.controls button:hover {
+.btn-action:hover {
+  background-color: #e8e8e8;
+}
+
+.btn-action.active {
+  background-color: #2196f3;
+  color: white;
+  border-color: #1976d2;
+}
+
+.btn-action.btn-undo {
+  background-color: #2196f3;
+  color: white;
+  border-color: #1976d2;
+}
+
+.btn-action.btn-undo:hover {
   background-color: #1976d2;
 }
 
-.controls button.active {
-  background-color: #4caf50;
-}
-
-/* Číselník */
-.number-pad {
-  display: grid;
-  grid-template-columns: repeat(9, 50px);
-  gap: 5px;
-  margin-top: 20px;
-  justify-content: center;    /* vodorovné vycentrování gridu */
-  align-items: center;      /* vertikální vycentrování gridu */
-}
-
-.number-pad button {
-  width: 50px;
-  height: 50px;
-  font-size: 20px;
-  background-color: #f5f5f5;
-  border: 1px solid #ddd;
-  color: #333;
-  cursor: pointer;
-  border-radius: 4px;
+/* Keypad */
+.keypad {
   display: flex;
-  justify-content: center;
   align-items: center;
-}
-
-.number-pad button:hover {
-  background-color: #e0e0e0;
-}
-
-/* Víťazná správa */
-.win {
+  gap: 8px;
   margin-top: 20px;
-  padding: 15px 30px;
+}
+
+.keypad-label {
+  font-weight: 600;
+  margin-right: 10px;
+  color: #666;
+  font-size: 14px;
+}
+
+.keypad-btn {
+  width: 42px;
+  height: 42px;
+  font-size: 18px;
+  font-weight: 600;
+  background-color: white;
+  border: 2px solid #e0e0e0;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #333;
+}
+
+.keypad-btn:hover {
+  background-color: #2196f3;
+  color: white;
+  border-color: #2196f3;
+}
+
+/* Pravá sekcia - nastavenia */
+.settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 180px;
+  max-width: 200px;
+}
+
+.settings-panel {
+  background-color: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.settings-panel h3 {
+  margin: 0 0 8px 0;
+  font-size: 12px;
+  color: #888;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+/* Mode tlačidlá */
+.mode-btn {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 6px 10px;
+  margin-bottom: 5px;
+  background-color: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 5px;
+  cursor: pointer;
+  text-align: left;
+  font-size: 13px;
+  color: #333;
+  transition: all 0.2s;
+}
+
+.mode-btn:hover {
+  background-color: #f5f5f5;
+}
+
+.mode-btn.active {
+  background-color: #e3f2fd;
+  border-color: #2196f3;
+}
+
+.mode-btn:last-child {
+  margin-bottom: 0;
+}
+
+.radio {
+  width: 14px;
+  height: 14px;
+  border: 2px solid #bdbdbd;
+  border-radius: 50%;
+  margin-right: 8px;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.mode-btn.active .radio {
+  border-color: #2196f3;
+  background-color: #2196f3;
+  box-shadow: inset 0 0 0 3px white;
+}
+
+/* Mode info tooltip */
+.mode-info {
+  font-size: 10px;
+  color: #888;
+  margin-top: 6px;
+  padding: 6px;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+  line-height: 1.3;
+}
+
+/* Difficulty tlačidlá */
+.difficulty-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.difficulty-btn {
+  width: 100%;
+  padding: 6px;
+  background-color: white;
+  border: 2px solid #e0e0e0;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.2s;
+  color: #333;
+}
+
+.difficulty-btn:hover {
+  background-color: #f5f5f5;
+}
+
+.difficulty-btn.active {
+  background-color: #f5f5f5;
+  border-color: #333;
+}
+
+/* Time display */
+.time-display {
+  font-size: 26px;
+  font-weight: 700;
+  color: #2196f3;
+  text-align: center;
+  padding: 5px;
+}
+
+/* Stats */
+.stats-bar {
+  width: 100%;
+  height: 6px;
+  background-color: #e0e0e0;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.stat-filled {
+  height: 100%;
+  background-color: #2196f3;
+  transition: width 0.3s ease;
+  border-radius: 4px;
+}
+
+.stats-text {
+  font-size: 10px;
+  color: #888;
+  margin-bottom: 6px;
+}
+
+.stats-details {
+  display: flex;
+  justify-content: space-between;
+}
+
+.stat-item {
+  font-size: 11px;
+  color: #888;
+}
+
+.stat-item strong {
+  color: #333;
+  font-weight: 600;
+}
+
+.stat-item .mistakes-count {
+  color: #f44336;
+}
+
+.stat-item .hints-count {
+  color: #2196f3;
+}
+
+/* Modal Overlay */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background-color: white;
+  border-radius: 16px;
+  padding: 30px 50px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  text-align: center;
+  animation: modalIn 0.3s ease-out;
+  min-width: 300px;
+}
+
+@keyframes modalIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.congrats-modal h2 {
+  font-size: 28px;
+  color: #333;
+  margin: 0 0 25px 0;
+}
+
+.gameover-modal .gameover-title {
+  font-size: 32px;
+  color: #f44336;
+  margin: 0 0 8px 0;
+  font-weight: 700;
+}
+
+.gameover-modal .gameover-subtitle {
+  font-size: 14px;
+  color: #888;
+  margin: 0 0 25px 0;
+}
+
+.modal-stats {
+  margin-bottom: 25px;
+}
+
+.modal-stat-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.modal-stat-row:last-child {
+  border-bottom: none;
+}
+
+.stat-label {
+  color: #666;
+  font-size: 14px;
+}
+
+.stat-value {
+  font-weight: 600;
+  font-size: 14px;
+  color: #333;
+}
+
+.stat-value.time-value {
+  color: #2196f3;
+}
+
+.stat-value.mistakes-value {
+  color: #f44336;
+}
+
+.stat-value.hints-value {
+  color: #2196f3;
+}
+
+.stat-value.difficulty-value {
+  color: #333;
+  font-weight: 700;
+}
+
+.modal-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.btn-new-game {
+  padding: 12px 28px;
   background-color: #4caf50;
   color: white;
-  font-size: 24px;
-  font-weight: bold;
+  border: none;
   border-radius: 8px;
-  animation: celebration 0.5s ease-in-out;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
 }
 
-@keyframes celebration {
-  0% { transform: scale(0.8); opacity: 0; }
-  50% { transform: scale(1.1); }
-  100% { transform: scale(1); opacity: 1; }
+.btn-new-game:hover {
+  background-color: #43a047;
+}
+
+.btn-new-game.btn-retry {
+  background-color: #f44336;
+}
+
+.btn-new-game.btn-retry:hover {
+  background-color: #e53935;
+}
+
+.btn-menu {
+  padding: 12px 28px;
+  background-color: #9e9e9e;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-menu:hover {
+  background-color: #757575;
+}
+
+.win-message {
+  display: none;
+}
+
+.btn-back {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background: #4a5568;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.3s;
+}
+
+.btn-back:hover {
+  background: #2d3748;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .game-layout {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .settings-section {
+    width: 100%;
+    max-width: 450px;
+  }
+  
+  .sudoku-board {
+    grid-template-rows: repeat(9, 40px);
+  }
+  
+  .sudoku-row {
+    grid-template-columns: repeat(9, 40px);
+  }
+  
+  .sudoku-cell {
+    font-size: 18px;
+  }
 }
