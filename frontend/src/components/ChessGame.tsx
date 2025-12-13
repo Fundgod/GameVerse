@@ -30,7 +30,7 @@ export default function ChessGame({ onMove, onGameStateChange }: ChessGameProps)
         turn: chessGame.turn()
       });
     }
-  }, [chessPosition, onGameStateChange, chessGame]);
+  }, [chessPosition]);
 
   // get the move options for a square to show valid moves
   function getMoveOptions(square: Square) {
