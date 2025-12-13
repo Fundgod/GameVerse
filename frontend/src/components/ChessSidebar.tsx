@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import type { Move } from 'chess.js';
+import './ChessSidebar.css';
 
 interface ChessSidebarProps {
     moveHistory: Move[];
