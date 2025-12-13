@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import ChessGame from "./components/ChessGame";
+import ChessSidebar from "./components/ChessSidebar";
 import type { Move } from "chess.js";
 import "./Chess.css";
 
@@ -87,97 +88,21 @@ export default function App() {
     chessGameKey.current += 1;
   };
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const formatMove = (move: Move, index: number) => {
-    const moveNumber = Math.floor(index / 2) + 1;
-    const isWhiteMove = index % 2 === 0;
-
-    let notation = move.san;
-    if (move.captured) {
-      notation = move.san;
-    }
-
-    return { moveNumber, isWhiteMove, notation };
+  const handleToggleTimer = () => {
+    setIsTimerActive(!isTimerActive);
   };
 
   return (
     <div className="chess">
-      <div className="sidebar">
-        <h2>Chess Hub</h2>
-
-        {/* Timer Section */}
-        <div className="timerSection">
-          <div className={`timer ${gameState.turn === 'b' ? 'active' : ''}`}>
-            <div className="playerLabel">Black</div>
-            <div className="timeDisplay">{formatTime(blackTime)}</div>
-          </div>
-          <div className={`timer ${gameState.turn === 'w' ? 'active' : ''}`}>
-            <div className="playerLabel">White</div>
-            <div className="timeDisplay">{formatTime(whiteTime)}</div>
-          </div>
-        </div>
-
-        {/* Controls */}
-        <div className="controls">
-          <button onClick={handleReset} className="controlButton">
-            Reset Game
-          </button>
-          <button
-            onClick={() => setIsTimerActive(!isTimerActive)}
-            className="controlButton"
-            disabled={gameState.isGameOver}
-          >
-            {isTimerActive ? 'Pause' : 'Start'} Timer
-          </button>
-        </div>
-
-        {/* Game Status */}
-        {gameState.isGameOver && (
-          <div className="gameStatus">
-            {gameState.isCheckmate
-              ? `Checkmate! ${gameState.turn === 'w' ? 'Black' : 'White'} wins!`
-              : gameState.isDraw
-                ? 'Draw!'
-                : 'Game Over'}
-          </div>
-        )}
-
-        {/* Move List */}
-        <div className="moveList">
-          <h3>Move History</h3>
-          <div className="moveListContent">
-            {moveHistory.length === 0 ? (
-              <div className="emptyMoves">No moves yet</div>
-            ) : (
-              <div className="moves">
-                {moveHistory.map((move, index) => {
-                  const { moveNumber, isWhiteMove, notation } = formatMove(move, index);
-
-                  if (isWhiteMove) {
-                    return (
-                      <div key={index} className="moveRow">
-                        <span className="moveNumber">{moveNumber}.</span>
-                        <span className="moveNotation">{notation}</span>
-                        {moveHistory[index + 1] && (
-                          <span className="moveNotation">
-                            {moveHistory[index + 1].san}
-                          </span>
-                        )}
-                      </div>
-                    );
-                  }
-                  return null;
-                })}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+      <ChessSidebar
+        moveHistory={moveHistory}
+        gameState={gameState}
+        whiteTime={whiteTime}
+        blackTime={blackTime}
+        isTimerActive={isTimerActive}
+        onReset={handleReset}
+        onToggleTimer={handleToggleTimer}
+      />
 
       <div className="boardWrapper">
         <ChessGame
