@@ -34,7 +34,7 @@ SECRET_CANDIDATES = list(set(
 ))
 
 # Debug výpisy
-print(f"Načteno {len(VALID_GUESSES)} pětipísmenných slov v tajném slovníku, z toho {len(SECRET_CANDIDATES)} ve zjednodušeném.")
+print(f"{len(VALID_GUESSES)} five-letter words loaded in secret dictionary, of which {len(SECRET_CANDIDATES)} are in the simplified.")
 
 # Ukládáme hry do paměti pomocí slovníku
 GAMES = {} 
@@ -63,7 +63,7 @@ def compute_feedback(secret: str, guess: str) -> list[str]:
 # Running Endpoint
 @app.get("/")
 def root():
-    return {"message": "Wordle backend běží!"}
+    return {"message": "Wordle backend running!"}
 
 # Endpoint pro vytvoření nové hry
 @app.post("/api/new_game")
@@ -76,7 +76,7 @@ def new_game():
         secret_word = random.choice(SECRET_CANDIDATES)
         
     GAMES[game_id] = secret_word
-    print(f"Nová hra {game_id}: {secret_word}")
+    print(f"New game: {game_id}: {secret_word}")
     return {"game_id": game_id}
 
 # Endpoint pro kontrolu hádaného slova
@@ -86,16 +86,16 @@ def check_word(guess: Guess):
     secret_word = GAMES.get(guess.game_id)
 
     if not secret_word:
-        raise HTTPException(status_code=404, detail="Hra nenalezena (asi vypršela nebo neexistuje)")
+        raise HTTPException(status_code=404, detail="Game not found (probably expired or does not exist)")
 
     word = guess.word.lower()
     # Validace vstupu
     if len(word) != 5:
-        raise HTTPException(status_code=400, detail="Slovo musí mít 5 písmen")
+        raise HTTPException(status_code=400, detail="The word must have 5 letters.")
     if not word.isalpha():
-        raise HTTPException(status_code=400, detail="Slovo musí obsahovat jen písmena")
+        raise HTTPException(status_code=400, detail="The word must contain only letters")
     if word not in VALID_GUESSES:
-        raise HTTPException(status_code=400, detail="Neplatné anglické slovo")
+        raise HTTPException(status_code=400, detail="Invalid English word")
     
     result = compute_feedback(secret_word, word)
     is_correct = word == secret_word

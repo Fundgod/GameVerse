@@ -1,3 +1,10 @@
+/**
+ * @file App.css
+ * @brief Styly pro hlavní menu aplikace GameVerse.
+ * @author Jiří Hronský xhronsj00
+ */
+
+ /* Celkový kontejner aplikace */
 .app-container {
   min-height: 100vh;
   background: #677dec;
@@ -14,6 +21,8 @@
 .app-container > * {
   transform: translateY(-4rem);
 }
+
+/* Hlavní stránka s výběrem her */
 .home-page {
   width: 100%;
   max-width: 900px;
@@ -22,28 +31,31 @@
   flex-direction: column;
 }
 
+/* Hlavička s názvem aplikace */
 .header {
   text-align: center;
   margin-bottom: 3rem;
 }
 
+/* Nadpis aplikace */
 .header h1 {
   color: white;
   font-size: 3.5rem;
   text-shadow: 3px 3px 6px rgba(0,0,0,0.3);
 }
 
+/* Mřížka s hrami */
 .games-grid {
   width: 100%;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 5rem; /* Zvýšený gap */
-  justify-items: center;      /* Každý box bude centrován ve sloupci */
-  justify-content: center;    /* Celý grid bude na střed */
+  gap: 5rem;
+  justify-items: center;
+  justify-content: center;
   align-items: center;
 }
 
-
+/* Karta jednotlivé hry */
 .game-card.chess-color, .game-card.sudoku-color, .game-card.wordle-color {
   background: white;
   border-radius: 20px;
@@ -61,25 +73,25 @@
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   min-width: 0;
 }
-
+/* Ikona hry */
 .game-icon {
   font-size: 2.2rem;
   margin-bottom: 0.8rem;
 }
-
+/* Název hry */
 .game-card h2 {
   font-size: 2rem;
   margin-top: auto;
   margin-bottom: 1rem;
 }
 
-
+/* Hover efekt pro kartu hry */
 .game-card:hover {
   transform: translateY(-10px) scale(1.02);
   box-shadow: 0 20px 40px rgba(0,0,0,0.3);
 
 }
-
+/* Hover efekt textu pro hru */
 .game-card.sudoku-color:hover h2 {
   color: #f092fa;
 }
@@ -92,14 +104,15 @@
   color: #43e97b;
 }
 
+/* Vnitřní obdélník karty */
 .card-inner {
-  width: 14vw;      /* šířka pro poměr 9:16 */
-  height: 30vh;     /* výška pro poměr 9:16 */
+  width: 14vw;
+  height: 30vh;
   border-radius: 8px;
   margin: auto;
-  display: flex;               /* přidá flexbox */
-  justify-content: center;     /* horizontálně vycentruje obsah */
-  align-items: center;         /* vertikálně vycentruje obsah */
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 /* Barvy pro každý box */
@@ -113,22 +126,54 @@
   background: #43e97b;
 }
 
+/* Obrázek v kartě */
 .card-img {
   width: 10vw;
   height: 20vh;
-  object-fit: contain;    /* nebo cover, podle typu ikonky */
+  object-fit: contain;
   display: block;
   margin: 0 auto;
   
 }
+/* RESPONZIVITA HRY */
+@media (max-width: 1000px) {
+  .games-grid {
+    grid-template-columns: 1fr;
+    gap: 3rem;
+    padding-bottom: 3rem;
+  }
 
+  .game-card.chess-color, 
+  .game-card.sudoku-color, 
+  .game-card.wordle-color {
+    width: 280px;
+    height: 420px;
+    margin: 0 auto;
+  }
 
-.wordle-root {
-  min-height: 100vh;
-  background: #f3f3f3; /* nebo libovolná barva */
-  width: 100vw;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding-top: 4vh;
+  .card-inner {
+    width: 240px;
+    height: 280px;
+  }
+
+  .card-img {
+    width: 140px;
+    height: 140px;
+  }
+
+  .header h1 {
+    font-size: 2.5rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .app-container > * {
+    transform: none; 
+    padding-top: 2rem;
+  }
+  
+  .app-container {
+    height: auto;
+    align-items: flex-start;
+    padding-bottom: 2rem;
+  }
 }

@@ -1,3 +1,10 @@
+
+/**
+  @file Wordle.css
+  @brief Styly pro Wordle aplikaci
+  @author Jiří Hronský xhronsj00
+*/
+
 /* Celkový kontejner */
 .wordle-app-container {
   display: flex;
@@ -15,7 +22,7 @@
   box-sizing: border-box;
 }
 
-/* 2. Toast notifikace - posuneme ji do mezery pod nadpis */
+/* Toast notifikace */
 .toast {
   position: fixed;
   top: 100px;
@@ -24,10 +31,10 @@
   background-color: #626262;
   color: #fff;
   padding: 10px 20px;
-  border-radius: 4px; /* Jemnější rohy */
-  font-size: 14px;    /* Trochu menší font, ať to není obří */
+  border-radius: 4px;
+  font-size: 14px;
   font-weight: 600;
-  text-transform: uppercase; /* Aby to vypadalo jako na obrázku */
+  text-transform: uppercase;
   z-index: 1000;
   box-shadow: 0 4px 12px rgba(0,0,0,0.3);
   animation: slideDown 0.3s ease;
@@ -96,13 +103,13 @@ h1 {
 .grid-cell.filled {
   border-color: #000;
 }
-
+/* Animace otočení políček při odhalení výsledku */
 @keyframes flipReveal {
   0% {
     transform: rotateX(0deg);
   }
   50% {
-    transform: rotateX(90deg); /* Karta je "naplocho" (neviditelná) */
+    transform: rotateX(90deg);
   }
   100% {
     transform: rotateX(0deg);
@@ -112,22 +119,16 @@ h1 {
 .grid-cell.green,
 .grid-cell.yellow,
 .grid-cell.black {
-  /* Spustí animaci 'flipReveal' trvající 0.5s */
   animation: flipReveal 0.6s ease forwards;
-  
-  /* Důležité: Barva pozadí a textu se změní až v polovině animace (když je karta otočená) */
-  /* Použijeme transition-delay, aby barva "neblikla" hned, ale až se karta otočí */
   transition: background-color 0s, border-color 0s, color 0s; 
 }
-
-/* --- POSTUPNÉ ZPOŽDĚNÍ (STAGGER) --- */
 
 /* 1. písmeno - hned */
 .grid-cell.green:nth-child(1),
 .grid-cell.yellow:nth-child(1),
 .grid-cell.black:nth-child(1) {
   animation-delay: 0ms;
-  transition-delay: 300ms; /* Změna barvy v polovině animace (0.5s / 2) */
+  transition-delay: 300ms;
 }
 
 /* 2. písmeno - zpoždění 300ms */
@@ -135,7 +136,7 @@ h1 {
 .grid-cell.yellow:nth-child(2),
 .grid-cell.black:nth-child(2) {
   animation-delay: 300ms;
-  transition-delay: 600ms; /* 300ms + 250ms */
+  transition-delay: 600ms;
 }
 
 /* 3. písmeno - zpoždění 600ms */
@@ -143,7 +144,7 @@ h1 {
 .grid-cell.yellow:nth-child(3),
 .grid-cell.black:nth-child(3) {
   animation-delay: 600ms;
-  transition-delay: 900ms; /* 600ms + 250ms */
+  transition-delay: 900ms;
 }
 
 /* 4. písmeno - zpoždění 900ms */
@@ -151,7 +152,7 @@ h1 {
 .grid-cell.yellow:nth-child(4),
 .grid-cell.black:nth-child(4) {
   animation-delay: 900ms;
-  transition-delay: 1200ms; /* 900ms + 250ms */
+  transition-delay: 1200ms;
 }
 
 /* 5. písmeno - zpoždění 1200ms */
@@ -159,7 +160,7 @@ h1 {
 .grid-cell.yellow:nth-child(5),
 .grid-cell.black:nth-child(5) {
   animation-delay: 1200ms;
-  transition-delay: 1500ms; /* 1200ms + 250ms */
+  transition-delay: 1500ms;
 }
 
 
@@ -196,7 +197,7 @@ h1 {
   transition: border-color 0.2s ease;
 }
 .key.key-big {
-  font-size: 19px; /* větší písmena, jen pro jednotlivé znaky */
+  font-size: 19px;
 }
 .key:hover {
   border-color: #000;
@@ -214,7 +215,7 @@ h1 {
   border-color: #000;
 }
 
-/* --- Barvy klávesnice dle stavu --- */
+/* Barvy klávesnice dle stavu */
 .key.green {
   background-color: #61AF26;
   border-color: #61AF26;
@@ -233,35 +234,116 @@ h1 {
   color: #fff;
 }
 
-/* --- VÝHERNÍ OBRAZOVKA --- */
+/* Layout hry */
+.game-content {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 50px;
+  margin-bottom: 30px;
+}
+
+/* Boční panel */
+.side-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-top: 20px;
+  align-items: center;
+}
+
+/* Styly pro boxy a tlačítko */
+.info-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+/* Popisky */
+.info-label {
+  font-size: 0.7rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 5px;
+  color: #333;
+}
+
+/* Info box (Čas a Tahy) */
+.info-box {
+  background-color: #fff;
+  border: 2px solid #333;
+  border-radius: 4px;
+  padding: 10px 0;
+  width: 130px;
+  height: 45px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #000;
+  box-sizing: border-box;
+}
+
+/* Tlačítko Leave */
+.leave-btn {
+  background-color: #fff;
+  border: 2px solid #333;
+  border-radius: 4px;
+  width: 130px;
+  height: 45px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  color: #000;
+  transition: background-color 0.2s;
+  box-sizing: border-box;
+}
+
+.leave-btn:hover {
+  background-color: #f0f0f0;
+  border-color: #333;
+}
+
+/* VÝHERNÍ OBRAZOVKA */
 
 .win-screen {
   display: flex;
   flex-direction: column;
-  justify-content: center; /* Zarovnání na střed, jako na obrázku */
+  justify-content: flex-start;
   align-items: center;
-  min-height: 80vh; /* Dostatek místa */
+  min-height: 100vh;
+  width: 100vw;
   text-align: center;
-  background-color: #fff;
-  color: #000;
-  padding-top: 20px;
-  user-select: none;          /* Standardní syntaxe */
-  -webkit-user-select: none;  /* Pro Safari a Chrome */
-  cursor: default;            /* Kurzoru se změní na šipku, ne na "I" pro psaní */
+  background-color: #FFFFFF;
+  padding-top: 40px;
+  user-select: none;
+  cursor: default;
+  outline: none;
+  box-sizing: border-box;
 }
 
 /* Nadpis */
 .win-screen h1 {
-  margin-bottom: 40px;
-  font-size: 2rem;
-  font-weight: bold;
+  margin: 0 0 75px 0;
+  color: #000;
+  font-size: 2.7rem;
+  font-weight: 700;
 }
 
-/* Ikonka mřížky (statická) */
+/* Ikonka mřížky */
 .mini-grid-icon {
   display: flex;
   flex-direction: column;
-  margin-bottom: 30px;
+  padding-top: 3vh;
+  margin-bottom: 10vh;
 }
 
 .mini-row {
@@ -273,12 +355,12 @@ h1 {
   height: 35px;
 }
 
-/* Barvy pro mini mřížku */
+/* Barvy pro mřížku */
 .mini-cell-static.green { background-color: #61AF26; }
 .mini-cell-static.yellow { background-color: #C9AF58; }
 .mini-cell-static.black { background-color: #626262; }
 
-
+/* Podnadpis */
 .win-subtitle {
   font-size: 1rem;
   margin: 5px 0;
@@ -292,10 +374,10 @@ h1 {
   flex-direction: column;
   gap: 10px;
   margin-top: 40px;
-  width: 160px; /* Fixní šířka tlačítek dle obrázku */
+  width: 160px;
 }
 
-/* --- ŠEDÁ TLAČÍTKA (Fix barvy) --- */
+/* Tlačítka */
 .btn-grey {
   padding: 10px 0;
   font-size: 1rem;
@@ -314,90 +396,12 @@ h1 {
 }
 
 .btn-grey:hover {
-  background-color: #4a4a4a; /* Ztmavení po najetí */
+  background-color: #4a4a4a;
 }
 
-/* --- UPRAVENÝ LAYOUT HRY --- */
-
-.game-content {
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  gap: 50px;
-  margin-bottom: 30px;
-}
-
-/* Boční panel - přidal jsem align-items: center pro vycentrování všeho pod sebou */
-.side-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  margin-top: 20px;
-  align-items: center;
-}
-
-/* --- STYLY PRO BOXY A TLAČÍTKO (Sjednocené rozměry) --- */
-
-.info-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 100%; /* Aby kontejner zabíral celou šířku rodiče */
-}
-
-.info-label {
-  font-size: 0.7rem;
-  font-weight: bold;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 5px;
-  color: #333;
-}
-
-/* Info box (Čas a Tahy) */
-.info-box {
-  background-color: #fff;
-  border: 2px solid #333;
-  border-radius: 4px;
-  padding: 10px 0;
-  width: 130px; /* Zvětšeno a fixováno */
-  height: 45px; /* Fixní výška pro konzistenci */
-  display: flex;        /* Flex pro vertikální centrování textu */
-  align-items: center;  /* Flex pro vertikální centrování textu */
-  justify-content: center; /* Flex pro horizontální centrování textu */
-  text-align: center;
-  font-size: 1.2rem;
-  font-weight: bold;
-  color: #000;
-  box-sizing: border-box; /* Důležité, aby padding neměnil šířku */
-}
-
-/* Tlačítko Leave - stejné rozměry jako info-box */
-.leave-btn {
-  background-color: #fff;
-  border: 2px solid #666;
-  border-radius: 4px;
-  width: 130px; /* STEJNÁ ŠÍŘKA JAKO INFO-BOX */
-  height: 45px; /* STEJNÁ VÝŠKA JAKO INFO-BOX */
-  font-size: 1rem;
-  font-weight: bold;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  color: #333;
-  transition: background-color 0.2s;
-  box-sizing: border-box;
-}
-
-.leave-btn:hover {
-  background-color: #f0f0f0;
-  border-color: #333;
-}
-
+/* Nadpis výsledku */
 .result-title {
-  font-size: 2.2rem; /* Větší než běžný nadpis */
+  font-size: 2.2rem;
   font-weight: 800;
   margin: 0 0 10px 0;
   text-transform: uppercase;
@@ -409,4 +413,88 @@ h1 {
 
 .result-title.red{
   color: #d32f2f;
+}
+
+/* RESPONZIVITA HRY */
+
+@media (max-width: 900px) {
+  
+  .game-content {
+    flex-direction: column;
+    align-items: center;
+    gap: 30px; /* Menší mezera mezi mřížkou a panelem */
+  }
+
+  .side-panel {
+    flex-direction: row;      /* Boxy vedle sebe */
+    justify-content: center;
+    flex-wrap: wrap;          /* Pokud se nevejdou, zalomí se */
+    width: 100%;
+    margin-top: 0;
+    gap: 15px;
+  }
+
+  .info-container {
+    width: auto;
+  }
+
+  h1 {
+    margin: 0 0 30px 0;
+    font-size: 2rem;
+  }
+}
+
+@media (max-width: 450px) {
+  .side-panel {
+    gap: 10px;
+  }
+  
+  .info-box, .leave-btn {
+    width: 100px;
+    font-size: 0.9rem;
+  }
+}
+
+/* RESPONZIVITA KLÁVESNICE */
+@media (max-width: 550px) {
+  /* Zmenšení běžných kláves */
+  .key {
+    width: 30px;
+    height: 45px;
+    margin: 2px;
+    font-size: 14px;
+  }
+
+  .key.key-big {
+    font-size: 16px;
+  }
+
+  .key-wide {
+    width: 52px;
+    height: 45px;
+    padding: 0 5px;
+  }
+
+  .grid-cell {
+    width: 45px;
+    height: 45px;
+    font-size: 1.5rem;
+    margin: 2px;
+  }
+}
+
+@media (max-width: 370px) {
+  .key {
+    width: 28px;
+    margin: 1px;
+  }
+
+  .key-wide {
+    width: 45px;
+  }
+
+  .wordle-app-container {
+    padding-left: 5px;
+    padding-right: 5px;
+  }
 }

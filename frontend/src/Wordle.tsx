@@ -1,6 +1,13 @@
+
+/**
+ * @file Wordle.tsx
+ * @brief Hlavní komponenta hry Wordle Unlimited
+ * @author Jiří Hronský xhronsj00
+ */
 import { useState, useEffect, useRef } from "react";
 import "./Wordle.css";
 
+// Definice typu pro zpětnou vazbu barev
 type Feedback = "G" | "Y" | "B";
 
 const ROWS = 6;
@@ -11,33 +18,41 @@ const ROW1 = ["Q","W","E","R","T","Y","U","I","O","P"];
 const ROW2 = ["A","S","D","F","G","H","J","K","L"];
 const ROW3 = ["Z","X","C","V","B","N","M"];
 
+// Hlavní komponenta aplikace
 function App() {
-  const [grid, setGrid] = useState<string[][]>(
+  const [grid, setGrid] = useState<string[][]>( // Herní mřížka
     Array.from({ length: ROWS }, () => Array(COLS).fill(""))
   );
-  const [feedbackGrid, setFeedbackGrid] = useState<Feedback[][]>(
+  const [feedbackGrid, setFeedbackGrid] = useState<Feedback[][]>( // Mřížka zpětné vazby
     Array.from({ length: ROWS }, () => Array(COLS).fill("B"))
   );
   
-  // NOVÉ: Stav pro barvy klávesnice (aby se aktualizovaly postupně)
+  // Stav klávesnice
   const [keyboardStatus, setKeyboardStatus] = useState<Record<string, Feedback>>({});
-
+  // Aktuální stav hry
   const [currentRow, setCurrentRow] = useState(0);
+  // Aktuálně zadávané slovo
   const [currentWord, setCurrentWord] = useState("");
+  // Toast zprávy
   const [toast, setToast] = useState<string | null>(null);
+  // Časovač pro toast zprávy
   const toastTimeout = useRef<number | null>(null);
+  // Stav odesílání slova
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  // Stavy hry
+  // Stav výhry
   const [hasWon, setHasWon] = useState(false);
+  // ID hry
   const [gameId, setGameId] = useState<string>("");
+  // Zbývající čas
   const [timeLeft, setTimeLeft] = useState(GAME_DURATION);
+  // Stav zastavení hry
   const [isGameStopped, setIsGameStopped] = useState(false);
-  
+  // Zobrazení modálního okna s výsledky
   const [showResultModal, setShowResultModal] = useState(false);
-
+  // Ref pro zamezení opakovaného načtení dat
   const dataFetchedRef = useRef(false);
 
+  // Funkce pro zahájení nové hry
   const startNewGame = async () => {
     try {
       const res = await fetch("http://127.0.0.1:8000/api/new_game", {
@@ -46,33 +61,35 @@ function App() {
       const data = await res.json();
       setGameId(data.game_id);
       
-      // Reset
+      //  Reset stavu hry
       setGrid(Array.from({ length: ROWS }, () => Array(COLS).fill("")));
       setFeedbackGrid(Array.from({ length: ROWS }, () => Array(COLS).fill("B")));
       setKeyboardStatus({}); // Reset klávesnice
-      setCurrentRow(0);
+      setCurrentRow(0); // Reset aktuálního řádku
       setCurrentWord("");
       setHasWon(false);
       setIsGameStopped(false);
       setShowResultModal(false);
       setTimeLeft(GAME_DURATION);
     } catch (err) {
-      console.error("Nepodařilo se nastartovat hru:", err);
+      console.error("Failed to start the game:", err);
     }
   };
-
+  // Inicializace nové hry při načtení komponenty
   useEffect(() => {
     if (dataFetchedRef.current) return;
     dataFetchedRef.current = true;
     startNewGame();
   }, []);
 
+  // Formátování času ve formátu MM:SS
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
+  // Zobrazení toast zprávy
   const showToast = (message: string) => {
     setToast(message);
     if (toastTimeout.current) {
@@ -84,12 +101,13 @@ function App() {
     }, 3000);
   };
 
+  // Časovač hry
   useEffect(() => {
     if (isGameStopped) return; 
 
     if (timeLeft <= 0) {
       setIsGameStopped(true);
-      showToast("Čas vypršel!");
+      showToast("Times Up!");
       setTimeout(() => {
         setShowResultModal(true);
       }, 3000);
@@ -103,6 +121,7 @@ function App() {
     return () => clearInterval(timerId);
   }, [timeLeft, isGameStopped]);
 
+  // Zpracování klávesových vstupů
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (isGameStopped) return;
@@ -121,11 +140,12 @@ function App() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [currentWord, currentRow, isGameStopped]);
 
+  // Odeslání aktuálního slova na server a zpracování odpovědi
   const handleSubmit = async () => {
     if (isGameStopped) return;
     
     if (currentWord.length !== COLS) {
-      showToast("Nedostatek písmen! Zadej 5 písmen.");
+      showToast("Not enough letters! Enter 5 letters.");
       return;
     }
     setIsSubmitting(true);
@@ -139,19 +159,19 @@ function App() {
         }),
       });
 
-      if (!res.ok) {
+      if (!res.ok) { // 400 Bad Request pro neplatná slova
         const error = await res.json();
-        showToast(error.detail || "Neplatné anglické slovo!");
+        showToast(error.detail || "Invalid English word!");
         return;
       }
 
       const data = await res.json();
-      if (data.error) {
+      if (data.error) { // Ošetření jiných chyb
         alert(data.error);
         return;
       }
 
-      // 1. Aktualizace gridu (spustí CSS animace na kartičkách)
+      // Aktualizace herní mřížky a zpětné vazby
       const newGrid = grid.map((row, r) =>
         r === currentRow ? currentWord.split("") : row
       );
@@ -162,21 +182,19 @@ function App() {
       );
       setFeedbackGrid(newFeedbackGrid);
 
-      // 2. Postupná aktualizace klávesnice (synchronizovaná s CSS)
+      // Aktualizace stavu klávesnice s animací
       const resultColors: Feedback[] = data.result;
       const letters = currentWord.split("");
 
       letters.forEach((letter, index) => {
         const color = resultColors[index];
-        // Výpočet zpoždění: (index * 300ms delay mezi kartami) + 250ms (polovina flip animace)
-        const delay = (index * 300) + 300;
+        const delay = (index * 300) + 300; // Zpoždění pro animaci
 
         setTimeout(() => {
           setKeyboardStatus((prev) => {
             const currentStatus = prev[letter];
             
             // Logika priorit: Green > Yellow > Black
-            // Pokud je nová barva zelená, přepsat cokoliv
             if (color === "G") return { ...prev, [letter]: "G" };
             
             // Pokud je nová barva žlutá a současná není zelená, přepsat
@@ -190,14 +208,15 @@ function App() {
         }, delay);
       });
 
-      // 3. Posun na další řádek a kontrola konce hry
+      // Přesun na další řádek
       const nextRow = currentRow + 1;
       setCurrentRow(nextRow);
       setCurrentWord("");
 
+      // Kontrola výhry nebo prohry
       if (data.is_correct) {
         setIsGameStopped(true);
-        showToast("🎉 Gratuluji! Uhodl jsi slovo!");
+        showToast("Congratulations! You guessed the word!");
         setTimeout(() => {
           setHasWon(true);
           setShowResultModal(true); 
@@ -205,21 +224,21 @@ function App() {
       } 
       else if (nextRow >= ROWS) {
         setIsGameStopped(true);
-        showToast("Konec hry! Došly pokusy.");
+        showToast("Game over! You've run out of attempts.");
         setTimeout(() => {
             setShowResultModal(true); 
         }, 3000);
       }
 
-    } catch (err) {
+    } catch (err) { // Síťové chyby
       console.error("Chyba:", err);
-      showToast("Chyba spojení se serverem!");
+      showToast("Connection error with the server!");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Upravená funkce: čte přímo z uloženého stavu klávesnice
+  // Získání třídy pro klávesu na základě jejího stavu
   const getKeyClassName = (key: string) => {
     const status = keyboardStatus[key];
     if (status === "G") return " green";
@@ -228,6 +247,7 @@ function App() {
     return "";
   };
 
+  // Zpracování kliknutí na klávesu
   const handleKeyClick = (key: string) => {
      if (isSubmitting || isGameStopped) return;
      if (currentWord.length < COLS) {
@@ -235,24 +255,27 @@ function App() {
      }
   };
 
+  // Zpracování stisku backspace
   const handleBackspace = () => {
     if (isGameStopped) return;
     setCurrentWord((prev) => prev.slice(0, -1));
   };
-
+ 
+  // Zpracování stisku enter
   const handleEnter = () => {
     if (isSubmitting || isGameStopped) return;
     handleSubmit();
   };
 
+  // Zobrazení okna s výsledky po skončení hry
   if (showResultModal) {
     const isTimeOut = timeLeft <= 0 && !hasWon;
-    
+   
     return (
       <div className="win-screen">
          <h1>WORDLE UNLIMITED</h1>
          
-         <div className="mini-grid-icon">
+         <div className="mini-grid-icon"> {/* Miniaturní ikona herní mřížky */}
             <div className="mini-row">
               <div className="mini-cell-static yellow"></div>
               <div className="mini-cell-static green"></div>
@@ -290,7 +313,9 @@ function App() {
 
          <div className="win-buttons">
             <button className="btn-grey" onClick={() => window.location.href = "/"}>Main Menu</button>
-            <button className="btn-grey" onClick={startNewGame}>Play Again <svg
+            <button className="btn-grey" onClick={startNewGame}>Play Again 
+              {/* Ikona restartu */}
+              <svg
               xmlns="http://www.w3.org/2000/svg"
               width="20"
               height="20"
@@ -311,7 +336,7 @@ function App() {
     );
   }
 
-  return (
+  return ( // Hlavní rozhraní hry
     <div className="wordle-app-container" tabIndex={-1}>
       {toast && <div className="toast">{toast}</div>}
 
@@ -325,7 +350,7 @@ function App() {
               ? [...currentWord.split(""), ...Array(COLS - currentWord.length).fill("")]
               : row;
 
-            return (
+            return ( // Jednotlivé řádky herní mřížky
               <div key={r} className="grid-row">
                 {currentLetters.map((cell, c) => {
                   const feedback = feedbackGrid[r][c];
@@ -348,7 +373,7 @@ function App() {
           })}
         </div>
 
-        <div className="side-panel">
+        <div className="side-panel"> {/* Boční panel s informacemi */}
           <div className="info-container">
             <div className="info-label">REMAINING TIME</div>
             <div className="info-box">
@@ -356,14 +381,14 @@ function App() {
             </div>
           </div>
 
-          <div className="info-container">
-            <div className="info-label">REMAINING MOVES</div>
+          <div className="info-container"> {/* Aktuální počet tahů */}
+            <div className="info-label">CURRENT MOVES</div>
             <div className="info-box">
               {Math.min(ROWS, currentRow)}/{ROWS}
             </div>
           </div>
 
-          <div className="info-container">
+          <div className="info-container"> {/* Tlačítko pro opuštění hry */}
             <div className="info-label" style={{ visibility: "hidden" }}>PLACEHOLDER</div>
             <button 
               className="leave-btn" 
@@ -375,7 +400,7 @@ function App() {
         </div>
       </div>
 
-      <div className="keyboard">
+      <div className="keyboard"> {/* Klávesnice */}
         <div className="keyboard-row">
           {ROW1.map((key) => (
             <button
@@ -400,11 +425,10 @@ function App() {
           ))}
         </div>
 
-        <div className="keyboard-row keyboard-row-last">
+        <div className="keyboard-row keyboard-row-last"> {/* Třetí řádek s Enter a Backspace */}
           <button 
-            onClick={(e) => { handleEnter(); (e.currentTarget as HTMLButtonElement).blur(); }} 
-            className="key key-wide"
-          >
+            onClick={(e) => { handleEnter(); (e.currentTarget as HTMLButtonElement).blur(); }} className="key key-wide">
+            {/* Tlačítko Enter */}
             <svg 
               xmlns="http://www.w3.org/2000/svg" 
               width="24" 
@@ -420,7 +444,7 @@ function App() {
               <path d="M20 4v7a4 4 0 0 1-4 4H4"></path>
             </svg>
           </button>
-          {ROW3.map((key) => (
+          {ROW3.map((key) => ( // Tlačítka písmen ve třetím řádku
             <button
               key={key}
               onClick={(e) => { handleKeyClick(key); (e.currentTarget as HTMLButtonElement).blur(); }}
@@ -430,6 +454,7 @@ function App() {
             </button>
           ))}
           <button onClick={(e) => { handleBackspace(); (e.currentTarget as HTMLButtonElement).blur(); }} className="key key-wide">
+            {/* Tlačítko Backspace */}
             <svg 
               xmlns="http://www.w3.org/2000/svg" 
               width="24" 
