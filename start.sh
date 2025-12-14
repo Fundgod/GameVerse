@@ -12,6 +12,7 @@ BACKEND_PID=$!                        # uložíme PID backend procesu
 # --- 3. Spuštění frontend Vite/React ---
 echo "Spouštím frontend (Vite/React)..."
 cd frontend
+npm install
 npm run dev
 FRONTEND_PID=$!
 

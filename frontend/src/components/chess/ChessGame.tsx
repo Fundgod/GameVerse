@@ -19,6 +19,7 @@ export default function ChessGame({ onMove, onGameStateChange }: ChessGameProps)
   const [chessPosition, setChessPosition] = useState(chessGame.fen());
   const [moveFrom, setMoveFrom] = useState('');
   const [optionSquares, setOptionSquares] = useState<Record<string, React.CSSProperties>>({});
+  const [kingSquare, setKingSquare] = useState<string | null>(null);
 
   // notify parent of game state changes
   useEffect(() => {
@@ -30,38 +31,64 @@ export default function ChessGame({ onMove, onGameStateChange }: ChessGameProps)
         turn: chessGame.turn()
       });
     }
-  }, [chessPosition, onGameStateChange, chessGame]);
+  }, [chessPosition]);
 
-  // get the move options for a square to show valid moves
+  // detect if king is in check and find its position
+  useEffect(() => {
+    if (chessGame.inCheck()) {
+      const currentTurn = chessGame.turn();
+      // find the king
+      const board = chessGame.board();
+      for (let row = 0; row < 8; row++) {
+        for (let col = 0; col < 8; col++) {
+          const piece = board[row][col];
+          if (piece && piece.type === 'k' && piece.color === currentTurn) {
+            const file = String.fromCharCode(97 + col); // 'a' to 'h'
+            const rank = (8 - row).toString(); // '8' to '1'
+            setKingSquare(file + rank);
+            return;
+          }
+        }
+      }
+    } else {
+      setKingSquare(null);
+    }
+  }, [chessPosition, chessGame]);
+
   function getMoveOptions(square: Square) {
     const moves = chessGame.moves({
       square,
       verbose: true
     });
 
-    // if no moves, clear the option squares (may continue to show last touched piece)
+    // if no moves, clear the option squares
     if (moves.length === 0) {
       setOptionSquares({});
       return false;
     }
 
-    // create a new object to store the option squares
     const newSquares: Record<string, React.CSSProperties> = {};
 
-    // show all possible moves with this piece
     for (const move of moves) {
       newSquares[move.to] = {
         background: chessGame.get(move.to) && chessGame.get(move.to)?.color !== chessGame.get(square)?.color
-          ? 'radial-gradient(circle, rgba(0,0,0,.1) 85%, transparent 85%)' // larger circle for capturing
-          : 'radial-gradient(circle, rgba(0,0,0,.1) 25%, transparent 25%)', // smaller circle for moving
+          ? 'radial-gradient(circle, rgba(0,0,0,.1) 85%, transparent 85%)' // large circle for captures
+          : 'radial-gradient(circle, rgba(0,0,0,.1) 25%, transparent 25%)', // small circle for moves
         borderRadius: '50%'
       };
     }
 
-    // set the square clicked to move from to yellow (add to previous return?)
+    // set the square clicked to move from to yellow
     newSquares[square] = {
       background: 'rgba(255, 255, 0, 0.4)'
     };
+
+    // add king in check highlight
+    if (kingSquare && !newSquares[kingSquare]) {
+      newSquares[kingSquare] = {
+        background: 'rgba(255, 0, 0, 0.6)'
+      };
+    }
 
     setOptionSquares(newSquares);
 
@@ -97,7 +124,7 @@ export default function ChessGame({ onMove, onGameStateChange }: ChessGameProps)
       return;
     }
 
-    // is normal move
+    // normal move
     try {
       const move = chessGame.move({
         from: moveFrom,
@@ -105,7 +132,6 @@ export default function ChessGame({ onMove, onGameStateChange }: ChessGameProps)
         promotion: 'q'
       });
 
-      // update the position state
       setChessPosition(chessGame.fen());
 
       // notify parent of the move
@@ -127,14 +153,11 @@ export default function ChessGame({ onMove, onGameStateChange }: ChessGameProps)
     }
   }
 
-  // handle piece drop
   function onPieceDrop({ sourceSquare, targetSquare }: PieceDropHandlerArgs) {
-    // catch null targetSquare (if dropped off board)
     if (!targetSquare) {
       return false;
     }
 
-    // try to make the move according to chess.js logic
     try {
       const move = chessGame.move({
         from: sourceSquare,
@@ -159,11 +182,19 @@ export default function ChessGame({ onMove, onGameStateChange }: ChessGameProps)
   }
 
   // chessboard options
+  // always show king in check if applicable
+  const customSquares = { ...optionSquares };
+  if (kingSquare && !customSquares[kingSquare]) {
+    customSquares[kingSquare] = {
+      background: 'rgba(255, 0, 0, 0.6)'
+    };
+  }
+
   const chessboardOptions = {
     onPieceDrop,
     onSquareClick,
     position: chessPosition,
-    squareStyles: optionSquares,
+    squareStyles: customSquares,
     id: 'click-or-drag-to-move'
   };
 
