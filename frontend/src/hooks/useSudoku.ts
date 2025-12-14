@@ -12,7 +12,7 @@
  * - Načítania hier z API alebo lokálneho generátora
  */
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { GameState, CellValue, GameMode, Difficulty } from '../types/sudoku.types';
 import { initializeBoard, createBoardFromData, generateSudoku, validateMoveForMode } from '../utils/sudoku.utils';
 import { sudokuApi } from '../services/sudokuApi';
@@ -48,20 +48,20 @@ export const useSudoku = () => {
   
   // Flag pre použitie API (ak je dostupné)
   const [useApi, setUseApi] = useState<boolean>(true);
+  
+  // Ref pre inicializáciu - zabráni viacnásobnému volaniu
+  const isInitialized = useRef(false);
 
   /**
    * Spustí novú hru s voliteľným režimom a obtiažnosťou
    * Najprv sa pokúsi načítať z API, pri zlyhaní použije lokálny generátor
-   * @param overrideMode - Voliteľný herný režim
-   * @param overrideDifficulty - Voliteľná obtiažnosť
+   * @param mode - Herný režim (povinný)
+   * @param difficulty - Obtiažnosť (povinná)
    */
   const startNewGame = useCallback(async (
-    overrideMode?: GameMode,
-    overrideDifficulty?: Difficulty
+    mode: GameMode,
+    difficulty: Difficulty
   ) => {
-    const mode = overrideMode ?? gameState.mode;
-    const difficulty = overrideDifficulty ?? gameState.difficulty;
-    
     // Nastavenie počtu undo a limitu chýb podľa obtiažnosti
     const undosCount = difficulty === 'easy' ? 5 : difficulty === 'medium' ? 3 : 0;
     const mistakesLimit = difficulty === 'hard' ? 3 : 0;
@@ -127,7 +127,7 @@ export const useSudoku = () => {
       oddEvenPattern: mode === 'odd-even' ? oddEvenPattern : undefined
     });
     setHistory([]);
-  }, [gameState.difficulty, gameState.mode, useApi]);
+  }, [useApi]);
 
   /**
    * Vyberie bunku na hernej doske
@@ -146,17 +146,17 @@ export const useSudoku = () => {
    * Vykonáva validáciu podľa herného režimu
    * @param value - Hodnota 1-9 alebo 0 pre vymazanie
    */
-  const makeMove = useCallback(async (value: CellValue) => {
-    if (!gameState.selectedCell || gameState.isGameOver) return;
-    
-    const { row, col } = gameState.selectedCell;
-    // Nemožno meniť počiatočné bunky
-    if (gameState.board[row][col].isInitial) return;
-
-    // Uložiť stav do histórie pre undo
-    setHistory(prev => [...prev, gameState]);
-
+  const makeMove = useCallback((value: CellValue) => {
     setGameState(prev => {
+      if (!prev.selectedCell || prev.isGameOver) return prev;
+      
+      const { row, col } = prev.selectedCell;
+      // Nemožno meniť počiatočné bunky
+      if (prev.board[row][col].isInitial) return prev;
+
+      // Uložiť stav do histórie pre undo
+      setHistory(hist => [...hist, prev]);
+
       // Deep copy dosky kvôli Set objektom v poznámkach
       const newBoard = prev.board.map(r => r.map(c => ({...c, notes: new Set(c.notes)})));
       
@@ -217,7 +217,7 @@ export const useSudoku = () => {
         isComplete
       };
     });
-  }, [gameState]);
+  }, []);
 
   /**
    * Prepne režim poznámok (notes mode)
@@ -232,12 +232,13 @@ export const useSudoku = () => {
   /**
    * Vymaže obsah vybranej bunky (hodnotu aj poznámky)
    */
-  const eraseCell = useCallback(async () => {
-    if (!gameState.selectedCell || gameState.isGameOver) return;
-    const { row, col } = gameState.selectedCell;
-    if (gameState.board[row][col].isInitial) return;
-    
+  const eraseCell = useCallback(() => {
     setGameState(prev => {
+      if (!prev.selectedCell || prev.isGameOver) return prev;
+      
+      const { row, col } = prev.selectedCell;
+      if (prev.board[row][col].isInitial) return prev;
+      
       const newBoard = prev.board.map(r => r.map(c => ({...c, notes: new Set(c.notes)})));
       newBoard[row][col].value = 0;
       newBoard[row][col].notes.clear();
@@ -249,7 +250,7 @@ export const useSudoku = () => {
         filledCells: newBoard.flat().filter(c => c.value !== 0).length
       };
     });
-  }, [gameState.selectedCell, gameState.isGameOver, gameState.board, gameState.solution]);
+  }, []);
 
   /**
    * Časovač hry - inkrementuje každú sekundu
@@ -271,51 +272,54 @@ export const useSudoku = () => {
    * Počet undo je limitovaný podľa obtiažnosti
    */
   const undo = useCallback(() => {
-    if (history.length === 0 || gameState.undosRemaining === 0) return;
-    
-    const previousState = history[history.length - 1];
-    setGameState(prev => ({
-      ...previousState,
-      undosRemaining: prev.undosRemaining - 1,
-      timeElapsed: prev.timeElapsed
-    }));
-    setHistory(prev => prev.slice(0, -1));
-  }, [history, gameState.undosRemaining]);
+    setGameState(prev => {
+      if (history.length === 0 || prev.undosRemaining === 0) return prev;
+      
+      const previousState = history[history.length - 1];
+      setHistory(hist => hist.slice(0, -1));
+      
+      return {
+        ...previousState,
+        undosRemaining: prev.undosRemaining - 1,
+        timeElapsed: prev.timeElapsed
+      };
+    });
+  }, [history]);
 
   /**
    * Poskytne nápovedu - vyplní správnu hodnotu do vybranej alebo prvej prázdnej bunky
    */
-  const giveHint = useCallback(async () => {
-    if (gameState.isGameOver) return;
-    
-    // Nájdi cieľovú bunku (vybranú alebo prvú prázdnu)
-    let targetRow = gameState.selectedCell?.row;
-    let targetCol = gameState.selectedCell?.col;
-    
-    if (targetRow === undefined || targetCol === undefined || 
-        gameState.board[targetRow][targetCol].isInitial ||
-        gameState.board[targetRow][targetCol].value !== 0) {
-      // Nájdi prvú prázdnu bunku
-      outer: for (let r = 0; r < 9; r++) {
-        for (let c = 0; c < 9; c++) {
-          if (gameState.board[r][c].value === 0 && !gameState.board[r][c].isInitial) {
-            targetRow = r;
-            targetCol = c;
-            break outer;
+  const giveHint = useCallback(() => {
+    setGameState(prev => {
+      if (prev.isGameOver) return prev;
+      
+      // Nájdi cieľovú bunku (vybranú alebo prvú prázdnu)
+      let targetRow = prev.selectedCell?.row;
+      let targetCol = prev.selectedCell?.col;
+      
+      if (targetRow === undefined || targetCol === undefined || 
+          prev.board[targetRow][targetCol].isInitial ||
+          prev.board[targetRow][targetCol].value !== 0) {
+        // Nájdi prvú prázdnu bunku
+        outer: for (let r = 0; r < 9; r++) {
+          for (let c = 0; c < 9; c++) {
+            if (prev.board[r][c].value === 0 && !prev.board[r][c].isInitial) {
+              targetRow = r;
+              targetCol = c;
+              break outer;
+            }
           }
         }
       }
-    }
-    
-    if (targetRow === undefined || targetCol === undefined) return;
-    
-    const correctValue = gameState.solution[targetRow][targetCol];
-    
-    setGameState(prev => {
+      
+      if (targetRow === undefined || targetCol === undefined) return prev;
+      
+      const correctValue = prev.solution[targetRow][targetCol];
+      
       const newBoard = prev.board.map(r => r.map(c => ({...c, notes: new Set(c.notes)})));
-      newBoard[targetRow!][targetCol!].value = correctValue as CellValue;
-      newBoard[targetRow!][targetCol!].isError = false;
-      newBoard[targetRow!][targetCol!].notes.clear();
+      newBoard[targetRow][targetCol].value = correctValue as CellValue;
+      newBoard[targetRow][targetCol].isError = false;
+      newBoard[targetRow][targetCol].notes.clear();
       
       const filledCells = newBoard.flat().filter(c => c.value !== 0).length;
       const isComplete = filledCells === 81 && 
@@ -329,54 +333,64 @@ export const useSudoku = () => {
         hintsUsed: prev.hintsUsed + 1,
         filledCells,
         isComplete,
-        selectedCell: { row: targetRow!, col: targetCol! }
+        selectedCell: { row: targetRow, col: targetCol }
       };
     });
-  }, [gameState]);
+  }, []);
 
   /**
    * Resetuje hru do počiatočného stavu (zachová ten istý puzzle)
    */
-  const resetGame = useCallback(async () => {
-    const newBoard = createBoardFromData(gameState.initialBoard);
-    
-    const undosCount = gameState.difficulty === 'easy' ? 5 : 
-                      gameState.difficulty === 'medium' ? 3 : 0;
-    
-    setGameState(prev => ({
-      ...prev,
-      board: newBoard,
-      mistakes: 0,
-      hintsUsed: 0,
-      timeElapsed: 0,
-      filledCells: gameState.initialBoard.flat().filter(v => v !== 0).length,
-      isComplete: false,
-      isGameOver: false,
-      undosRemaining: undosCount,
-      selectedCell: null
-    }));
+  const resetGame = useCallback(() => {
+    setGameState(prev => {
+      const newBoard = createBoardFromData(prev.initialBoard);
+      
+      const undosCount = prev.difficulty === 'easy' ? 5 : 
+                        prev.difficulty === 'medium' ? 3 : 0;
+      
+      return {
+        ...prev,
+        board: newBoard,
+        mistakes: 0,
+        hintsUsed: 0,
+        timeElapsed: 0,
+        filledCells: prev.initialBoard.flat().filter(v => v !== 0).length,
+        isComplete: false,
+        isGameOver: false,
+        undosRemaining: undosCount,
+        selectedCell: null
+      };
+    });
     setHistory([]);
-  }, [gameState.initialBoard, gameState.difficulty]);
+  }, []);
 
   /**
    * Zmení herný režim a automaticky spustí novú hru
    * @param mode - Nový herný režim
    */
   const changeMode = useCallback((mode: GameMode) => {
-    if (mode !== gameState.mode) {
-      startNewGame(mode, gameState.difficulty);
-    }
-  }, [gameState.mode, gameState.difficulty, startNewGame]);
+    setGameState(prev => {
+      if (mode !== prev.mode) {
+        // Spusť novú hru s novým režimom
+        startNewGame(mode, prev.difficulty);
+      }
+      return prev;
+    });
+  }, [startNewGame]);
 
   /**
    * Zmení obtiažnosť a automaticky spustí novú hru
    * @param difficulty - Nová obtiažnosť
    */
   const changeDifficulty = useCallback((difficulty: Difficulty) => {
-    if (difficulty !== gameState.difficulty) {
-      startNewGame(gameState.mode, difficulty);
-    }
-  }, [gameState.mode, gameState.difficulty, startNewGame]);
+    setGameState(prev => {
+      if (difficulty !== prev.difficulty) {
+        // Spusť novú hru s novou obtiažnosťou
+        startNewGame(prev.mode, difficulty);
+      }
+      return prev;
+    });
+  }, [startNewGame]);
 
   return {
     gameState,

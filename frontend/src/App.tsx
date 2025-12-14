@@ -8,8 +8,7 @@ import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import './App.css';
 import Wordle from './Wordle';
 import Chess from './Chess';
-import Sudoku from './Sudoku';
-import sudokuImg from "./assets/sudoku.png"
+import Sudoku from './components/Sudoku/Sudoku'; 
 import wordleImg from "./assets/wordle.png"
 import chessImg from "./assets/chess.png"
 

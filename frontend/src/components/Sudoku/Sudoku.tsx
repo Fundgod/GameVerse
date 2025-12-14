@@ -40,8 +40,8 @@ const Sudoku: React.FC = () => {
 
   // Inicializácia novej hry pri načítaní komponenty
   useEffect(() => {
-    startNewGame();
-  }, [startNewGame]);
+    startNewGame('classic', 'medium');
+  }, []);  // Prázdne dependencies - spustí sa len raz pri mount
 
   /**
    * Spracuje kliknutie na tlačidlo s číslom
@@ -163,10 +163,10 @@ const Sudoku: React.FC = () => {
             
             {/* Informačný box o aktuálnom režime */}
             <div className="mode-info">
-              {gameState.mode === 'classic' && '🎯 Klasické Sudoku pravidlá.'}
-              {gameState.mode === 'comparison' && '⚖️ Symboly < > ^ v ukazujú, ktoré číslo je väčšie/menšie.'}
-              {gameState.mode === 'odd-even' && '🔢 Oranžové = nepárne (1,3,5,7,9), Fialové = párne (2,4,6,8).'}
-              {gameState.mode === 'diagonal' && '❌ Diagonály musia obsahovať čísla 1-9 bez opakovania.'}
+              {gameState.mode === 'classic' && ' Classic Sudoku rules.'}
+              {gameState.mode === 'comparison' && ' Symbols < > indicate which number is greater/less.'}
+              {gameState.mode === 'odd-even' && ' Orange = odd (1,3,5,7,9), Purple = even (2,4,6,8).'}
+              {gameState.mode === 'diagonal' && ' Diagonals must contain numbers 1-9 without repetition.'}
             </div>
           </div>
           
