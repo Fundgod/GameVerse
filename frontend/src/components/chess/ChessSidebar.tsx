@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import type { Move } from 'chess.js';
 import './ChessSidebar.css';
@@ -10,22 +11,80 @@ interface ChessSidebarProps {
         isDraw: boolean;
         turn: 'w' | 'b';
     };
-    whiteTime: number;
-    blackTime: number;
-    isTimerActive: boolean;
     onReset: () => void;
-    onToggleTimer: () => void;
 }
 
 export default function ChessSidebar({
     moveHistory,
     gameState,
-    whiteTime,
-    blackTime,
-    isTimerActive,
-    onReset,
-    onToggleTimer
+    onReset
 }: ChessSidebarProps) {
+    const [whiteTime, setWhiteTime] = useState(600); // 10 minutes in seconds
+    const [blackTime, setBlackTime] = useState(600);
+    const [isTimerActive, setIsTimerActive] = useState(false);
+    const timerRef = useRef<number | null>(null);
+
+    // Timer countdown effect
+    useEffect(() => {
+        if (isTimerActive && !gameState.isGameOver) {
+            timerRef.current = window.setInterval(() => {
+                if (gameState.turn === 'w') {
+                    setWhiteTime(prev => {
+                        if (prev <= 0) {
+                            setIsTimerActive(false);
+                            return 0;
+                        }
+                        return prev - 1;
+                    });
+                } else {
+                    setBlackTime(prev => {
+                        if (prev <= 0) {
+                            setIsTimerActive(false);
+                            return 0;
+                        }
+                        return prev - 1;
+                    });
+                }
+            }, 1000);
+        } else {
+            if (timerRef.current) {
+                clearInterval(timerRef.current);
+                timerRef.current = null;
+            }
+        }
+
+        return () => {
+            if (timerRef.current) {
+                clearInterval(timerRef.current);
+            }
+        };
+    }, [isTimerActive, gameState.turn, gameState.isGameOver]);
+
+    // Stop timer when game is over
+    useEffect(() => {
+        if (gameState.isGameOver) {
+            setIsTimerActive(false);
+        }
+    }, [gameState.isGameOver]);
+
+    // Start timer on first move
+    useEffect(() => {
+        if (moveHistory.length === 1 && !isTimerActive) {
+            setIsTimerActive(true);
+        }
+    }, [moveHistory.length]);
+
+    const handleReset = () => {
+        setWhiteTime(600);
+        setBlackTime(600);
+        setIsTimerActive(false);
+        onReset(); // Call parent's reset to reset the game board
+    };
+
+    const handleToggleTimer = () => {
+        setIsTimerActive(!isTimerActive);
+    };
+
     const formatTime = (seconds: number) => {
         const mins = Math.floor(seconds / 60);
         const secs = seconds % 60;
@@ -60,11 +119,11 @@ export default function ChessSidebar({
             </div>
 
             <div className="controls">
-                <button onClick={onReset} className="controlButton">
+                <button onClick={handleReset} className="controlButton">
                     Reset Game
                 </button>
                 <button
-                    onClick={onToggleTimer}
+                    onClick={handleToggleTimer}
                     className="controlButton"
                     disabled={gameState.isGameOver}
                 >

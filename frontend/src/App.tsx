@@ -16,21 +16,21 @@ import chessImg from "./assets/chess.png"
 // Hlavní komponenta aplikace - nastavuje routy pro jednotlivé hry
 const App: React.FC = () => {
   return (
-<Router>
-  <Routes>
-    <Route
-      path="/"
-      element={
-        <div className="app-container">
-          <HomePage />
-        </div>
-      }
-    />
-    <Route path="/wordle" element={<Wordle />} />
-    <Route path="/chess" element={<Chess />} />
-    <Route path="/sudoku" element={<Sudoku />} />
-  </Routes>
-</Router>
+    <Router>
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <div className="app-container">
+              <HomePage />
+            </div>
+          }
+        />
+        <Route path="/wordle" element={<Wordle />} />
+        <Route path="/chess" element={<Chess />} />
+        <Route path="/sudoku" element={<Sudoku />} />
+      </Routes>
+    </Router>
   );
 };
 

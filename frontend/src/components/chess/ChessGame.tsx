@@ -72,18 +72,18 @@ export default function ChessGame({ onMove, onGameStateChange }: ChessGameProps)
     for (const move of moves) {
       newSquares[move.to] = {
         background: chessGame.get(move.to) && chessGame.get(move.to)?.color !== chessGame.get(square)?.color
-          ? 'radial-gradient(circle, rgba(0,0,0,.1) 85%, transparent 85%)' // larger circle for capturing
-          : 'radial-gradient(circle, rgba(0,0,0,.1) 25%, transparent 25%)', // smaller circle for moving
+          ? 'radial-gradient(circle, rgba(0,0,0,.1) 85%, transparent 85%)' // large circle for captures
+          : 'radial-gradient(circle, rgba(0,0,0,.1) 25%, transparent 25%)', // small circle for moves
         borderRadius: '50%'
       };
     }
 
-    // set the square clicked to move from to yellow (add to previous return?)
+    // set the square clicked to move from to yellow
     newSquares[square] = {
       background: 'rgba(255, 255, 0, 0.4)'
     };
 
-    // add king in check highlight if applicable
+    // add king in check highlight
     if (kingSquare && !newSquares[kingSquare]) {
       newSquares[kingSquare] = {
         background: 'rgba(255, 0, 0, 0.6)'
