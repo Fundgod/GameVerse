@@ -32,9 +32,23 @@ A collection of browser-based games built with React, TypeScript, and FastAPI. I
 
 ## Running the Project
 
+### First Time Setup
+
+Before running the project for the first time, install the backend dependencies:
+
+```bash
+cd backend
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install -r requirements.txt
+python -c "import nltk; nltk.download('words')"  # Download word corpus
+cd ..
+```
+
+You only need to do this once (or when dependencies are updated).
+
 ### Quick Start
 
-Just run the startup script:
+After the first-time setup, just run:
 
 ```bash
 ./start.sh
@@ -44,34 +58,21 @@ This will start both the backend and frontend. You can then access:
 - Frontend at http://localhost:5173
 - Backend API at http://localhost:8000
 
-### Manual Setup
+### Running Backend and Frontend Separately
 
-If you want to set things up yourself:
+If you want to run them in separate terminals:
 
 **Backend:**
-
 ```bash
 cd backend
-
-# Set up virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies from requirements.txt
-pip install -r requirements.txt
-
-# Download NLTK word corpus (needed for Wordle)
-python -c "import nltk; nltk.download('words')"
-
-# Run the server
+source venv/bin/activate
 uvicorn main:app --reload
 ```
 
 **Frontend:**
-
 ```bash
 cd frontend
-npm install
+npm install  # Only needed first time or after package updates
 npm run dev
 ```
 
